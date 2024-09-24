@@ -25,6 +25,7 @@ import { ConnectivityGraph, ConnectivityKnowledge, KnowledgeNode } from './graph
 export class App
 {
     #connectivityGraph: ConnectivityGraph|null
+    #currentPath: string = ''
     #knowledgeByPath: Map<string, ConnectivityKnowledge> = new Map()
     #labelCache: Map<string, string> = new Map()
     #labelledTerms: Set<string> = new Set()
@@ -53,7 +54,9 @@ export class App
             if (e.target.value !== '') {
                 // @ts-ignore
                 await this.#setPathList(e.target.value)
-                this.#clearConnectivity()
+                if (!this.#selectPath(this.#currentPath)) {
+                    this.#clearConnectivity()
+                }
             }
         }
         await this.#setPathList(selectedSource)
@@ -79,6 +82,7 @@ export class App
         await this.#connectivityGraph.addConnectivity(this.#knowledgeByPath.get(neuronPath))
         this.#hideSpinner()
         this.#connectivityGraph.showConnectivity()
+        this.#currentPath = neuronPath
     }
 
     #clearConnectivity()
@@ -89,6 +93,7 @@ export class App
             this.#connectivityGraph = null
             this.#showPrompt()
         }
+        this.#currentPath = ''
     }
 
     #hidePrompt()
@@ -162,6 +167,19 @@ export class App
             this.#cacheNodeLabels(edge[0])
             this.#cacheNodeLabels(edge[1])
         }
+    }
+
+    #selectPath(neuronPath: string): boolean
+    //======================================
+    {
+        if (this.#knowledgeByPath.has(neuronPath)) {
+            const optionElement = this.#pathSelector.querySelector(`option[value="${neuronPath}"]`) as HTMLOptionElement
+            if (optionElement) {
+                optionElement.selected = true
+                return true
+            }
+        }
+        return false
     }
 
     async #setPathList(source: string): Promise<string>
