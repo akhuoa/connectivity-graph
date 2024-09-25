@@ -22,6 +22,16 @@ import { ConnectivityGraph, ConnectivityKnowledge, KnowledgeNode } from './graph
 
 //==============================================================================
 
+type DataValues = {
+    values: any[]
+}
+
+type SourceList = {
+    sources: string[]
+}
+
+//==============================================================================
+
 export class App
 {
     #connectivityGraph: ConnectivityGraph|null
@@ -73,6 +83,27 @@ export class App
         this.#showPrompt()
     }
 
+
+    async #getJsonData<T>(url: string): Promise<T|null>
+    //=================================================
+    {
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    "Accept": "application/json; charset=utf-8",
+                    "Cache-Control": "no-store",
+                    "Content-Type": "application/json"
+                }
+            })
+            if (!response.ok) {
+                console.error(`Cannot access ${url}`)
+            }
+            return await response.json()
+        } catch {
+            return null
+        }
+    }
     async #showGraph(neuronPath: string)
     //==================================
     {
@@ -118,24 +149,30 @@ export class App
         this.#spinner.style.display = 'block'
     }
 
-    async #query(sql: string, params: string[]=[])
-    //============================================
+    async #query(sql: string, params: string[]=[]): Promise<DataValues>
+    //=================================================================
     {
         const url = `${this.#mapServer}knowledge/query/`
         const query = { sql, params }
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                "Accept": "application/json; charset=utf-8",
-                "Cache-Control": "no-store",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(query)
-        })
-        if (!response.ok) {
-            throw new Error(`Cannot access ${url}`)
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    "Accept": "application/json; charset=utf-8",
+                    "Cache-Control": "no-store",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(query)
+            })
+            if (!response.ok) {
+                throw new Error(`Cannot access ${url}`)
+            }
+            return await response.json()
+        } catch {
+            return {
+                values: []
+            }
         }
-        return await response.json()
     }
 
     async #getCachedTermLabels()
@@ -212,20 +249,8 @@ export class App
     async #setSourceList(): Promise<string>
     //=====================================
     {
-        const url = `${this.#mapServer}knowledge/sources`
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                "Accept": "application/json; charset=utf-8",
-                "Cache-Control": "no-store",
-                "Content-Type": "application/json"
-            }
-        })
-        if (!response.ok) {
-            throw new Error(`Cannot access ${url}`)
-        }
-        const data = await response.json()
-        const sources = data.sources
+        const data = await this.#getJsonData<SourceList>(`${this.#mapServer}knowledge/sources`)
+        const sources = data ? (data.sources || []) : []
 
         // Order with most recent first...
         let firstSource = ''
