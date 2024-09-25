@@ -127,26 +127,32 @@ export class App
         this.#currentPath = ''
     }
 
+    #showElement(element: HTMLElement, show: boolean=true)
+    //====================================================
+    {
+        element.style.display = show ? 'block' : 'none'
+    }
+
     #hidePrompt()
     //===========
     {
-        this.#pathPrompt.style.display = 'none'
+        this.#showElement(this.#pathPrompt, false)
     }
     #showPrompt()
     //===========
     {
-        this.#pathPrompt.style.display = 'block'
+        this.#showElement(this.#pathPrompt)
     }
 
     #hideSpinner()
     //============
     {
-        this.#spinner.style.display = 'none'
+        this.#showElement(this.#spinner, false)
     }
     #showSpinner()
     //============
     {
-        this.#spinner.style.display = 'block'
+        this.#showElement(this.#spinner)
     }
 
     async #query(sql: string, params: string[]=[]): Promise<DataValues>
