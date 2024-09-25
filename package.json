@@ -9,7 +9,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "vite serve --port 3002",
-    "comment": "vite build app --base /curation/flatmap/connectivity/"
     "build": "vite build . --base /connectivity-graph/",
   },
   "dependencies": {
