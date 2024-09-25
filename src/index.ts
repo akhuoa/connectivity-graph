@@ -22,8 +22,16 @@ import { ConnectivityGraph, ConnectivityKnowledge, KnowledgeNode } from './graph
 
 //==============================================================================
 
+const MIN_SCHEMA_VERSION = 1.3
+
+//==============================================================================
+
 type DataValues = {
     values: any[]
+}
+
+type SchemaVersion = {
+    version: number
 }
 
 type SourceList = {
@@ -57,6 +65,11 @@ export class App
     async run()
     //=========
     {
+        const schemaVersion = await this.#getSchemaVersion()
+        if (schemaVersion < MIN_SCHEMA_VERSION) {
+            this.#showElement(document.getElementById('no-server'))
+            return
+        }
         this.#showSpinner()
         const selectedSource = await this.#setSourceList()
         this.#sourceSelector.onchange = async (e) => {
@@ -104,6 +117,14 @@ export class App
             return null
         }
     }
+
+    async #getSchemaVersion(): Promise<number>
+    //========================================
+    {
+        const data = await this.#getJsonData<SchemaVersion>(`${this.#mapServer}knowledge/schema-version`)
+        return data ? (+data.version || 0) : 0
+    }
+
     async #showGraph(neuronPath: string)
     //==================================
     {

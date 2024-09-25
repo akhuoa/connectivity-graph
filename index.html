@@ -64,11 +64,15 @@
         padding: 3px;
       }
 
-      #path-prompt {
+      #no-server {
+        color: red;
+      }
+      .prompt {
         position: absolute;
         top: 80px;
         left: 20%;
         font-size: x-large;
+        display: none;
       }
 
       #node-key {
@@ -131,7 +135,8 @@
       <div class="content">
         <div id="graph-canvas"></div>
         <div id='spinner'></div>
-        <div id='path-prompt'>Please select path above...</div>
+        <div id='no-server' class='prompt' >Knowledge store unavailable or out of date...</div>
+        <div id='path-prompt' class='prompt'>Please select path above...</div>
       <div id="node-key">
         <div class="key-head">Node type:</div>
         <div>
