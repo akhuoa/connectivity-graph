@@ -206,12 +206,18 @@ export class App
     //==========================
     {
         if (this.#labelledTerms.size) {
-            const termLabels = await this.#query(`
-                select entity, label from labels
-                    where entity in (?${', ?'.repeat(this.#labelledTerms.size-1)})`,
+            const data = await this.#query(
+                `select entity, knowledge from knowledge
+                    where entity in (?${', ?'.repeat(this.#labelledTerms.size-1)})
+                    order by source desc`,
                 [...this.#labelledTerms.values()])
-            for (const termLabel of termLabels.values) {
-                this.#labelCache.set(termLabel[0], termLabel[1])
+            let last_entity = null
+            for (const [key, jsonKnowledge] of data.values) {
+                if (key !== last_entity) {
+                    const knowledge = JSON.parse(jsonKnowledge)
+                    this.#labelCache.set(key, knowledge['label'] || key)
+                    last_entity = key
+                }
             }
         }
     }
