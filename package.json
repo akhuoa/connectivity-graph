@@ -1,7 +1,7 @@
 {
   "name": "path-graph",
   "description": "Show neuron connectivity graphs on a canvas",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "David Brooks",
   "license": "MIT",
   "main": "index.js",
