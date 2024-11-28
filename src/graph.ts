@@ -31,6 +31,7 @@ export interface ConnectivityKnowledge
     connectivity: KnowledgeEdge[]
     axons: KnowledgeNode[]
     dendrites: KnowledgeNode[]
+    somas: KnowledgeNode[]
 }
 
 //==============================================================================
@@ -40,6 +41,7 @@ type GraphNode = {
     label: string
     axon?: boolean
     dendrite?: boolean
+    soma?: boolean
 }
 
 type GraphEdge = {
@@ -57,6 +59,7 @@ export class ConnectivityGraph
     #edges: GraphEdge[] = []
     #axons: string[]
     #dendrites: string[]
+    #somas: string[]
     #labelCache: Map<string, string>
 
     constructor(labelCache: Map<string, string>)
@@ -69,6 +72,7 @@ export class ConnectivityGraph
     {
         this.#axons = knowledge.axons.map(node => JSON.stringify(node))
         this.#dendrites = knowledge.dendrites.map(node => JSON.stringify(node))
+        this.#somas = knowledge.somas.map(node => JSON.stringify(node))
         if (knowledge.connectivity.length) {
             for (const edge of knowledge.connectivity) {
                 const e0 = await this.#graphNode(edge[0])
@@ -116,7 +120,7 @@ export class ConnectivityGraph
     get roots(): string[]
     //===================
     {
-        return this.#dendrites
+        return [...this.#dendrites, ...this.#somas]
     }
 
     async #graphNode(node: KnowledgeNode): Promise<GraphNode>
@@ -141,9 +145,10 @@ export class ConnectivityGraph
             } else {
                 result['axon'] = true
             }
+        } else if (this.#somas.includes(id)) {
+            result['soma'] = true
         } else if (this.#dendrites.includes(id)) {
             result['dendrite'] = true
-
         }
         return result
     }
@@ -173,6 +178,12 @@ const GRAPH_STYLE = [
         'selector': 'node[dendrite]',
         'style': {
             'background-color': 'red'
+        }
+    },
+    {
+        'selector': 'node[soma]',
+        'style': {
+            'background-color': 'pink'
         }
     },
     {
