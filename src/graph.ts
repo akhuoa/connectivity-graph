@@ -59,7 +59,7 @@ export class ConnectivityGraph
     #edges: GraphEdge[] = []
     #axons: string[]
     #dendrites: string[]
-    #somas: string[]
+    #somas: string[] = []
     #labelCache: Map<string, string>
 
     constructor(labelCache: Map<string, string>)
@@ -72,7 +72,9 @@ export class ConnectivityGraph
     {
         this.#axons = knowledge.axons.map(node => JSON.stringify(node))
         this.#dendrites = knowledge.dendrites.map(node => JSON.stringify(node))
-        this.#somas = knowledge.somas.map(node => JSON.stringify(node))
+        if ('somas' in knowledge) {
+            this.#somas = knowledge.somas.map(node => JSON.stringify(node))
+        }
         if (knowledge.connectivity.length) {
             for (const edge of knowledge.connectivity) {
                 const e0 = await this.#graphNode(edge[0])
