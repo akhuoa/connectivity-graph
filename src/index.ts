@@ -77,13 +77,12 @@ export class App
         this.#showSpinner()
         const selectedSource = await this.#setSourceList(this.#sckan)
         this.#sourceSelector.onchange = async (e) => {
+            const target = e.target as HTMLSelectElement
             this.#showSpinner()
-            // @ts-ignore
-            if (e.target.value !== '') {
-                // @ts-ignore
-                await this.#setPathList(e.target.value)
-                this.#sckan = e.target.value
-                this.#updateURL('sckan', e.target.value)
+            if (target.value !== '') {
+                await this.#setPathList(target.value)
+                this.#sckan = target.value
+                this.#updateURL('sckan', target.value)
                 if (!this.#selectPath(this.#currentPath)) {
                     this.#clearConnectivity()
                 }
@@ -92,13 +91,12 @@ export class App
         }
         await this.#setPathList(selectedSource)
         this.#pathSelector.onchange = async (e) => {
+            const target = e.target as HTMLSelectElement
             this.#showSpinner()
-            // @ts-ignore
-            if (e.target.value !== '') {
-                // @ts-ignore
-                await this.#showGraph(e.target.value)
-                this.#path = e.target.value
-                this.#updateURL('path', e.target.value)
+            if (target.value !== '') {
+                await this.#showGraph(target.value)
+                this.#path = target.value
+                this.#updateURL('path', target.value)
             } else {
                 this.#clearConnectivity()
             }
@@ -191,7 +189,7 @@ export class App
     #updateURL(key: string, value: string)
     //====================================
     {
-        const url = new URL(location)
+        const url = new URL(location.href)
         url.searchParams.set(key, value)
         history.pushState({}, '', url)
     }
