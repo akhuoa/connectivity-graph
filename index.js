@@ -22,11 +22,14 @@ import { App } from './src'
 
 //==============================================================================
 
-const MAP_SERVER = 'http://localhost:8000/'
+const searchParams = new URLSearchParams(location.search)
+const MAP_SERVER = searchParams.get('server')
+const SCKAN = searchParams.get('sckan')
+const PATH = searchParams.get('path')
 
 //==============================================================================
 
-const app = new App(MAP_SERVER)
+const app = new App(MAP_SERVER, SCKAN, PATH)
 
 await app.run()
 

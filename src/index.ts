@@ -48,14 +48,18 @@ export class App
     #labelCache: Map<string, string> = new Map()
     #labelledTerms: Set<string> = new Set()
     #mapServer: string
+    #sckan: string
+    #path: string
     #pathPrompt: HTMLElement
     #pathSelector: HTMLElement
     #sourceSelector: HTMLElement
     #spinner: HTMLElement
 
-    constructor(mapServer: string)
+    constructor(mapServer: string, sckan: string, path: string)
     {
         this.#mapServer = mapServer
+        this.#sckan = sckan
+        this.#path = path
         this.#pathPrompt = document.getElementById('path-prompt')
         this.#pathSelector = document.getElementById('path-selector')
         this.#sourceSelector = document.getElementById('source-selector')
@@ -71,26 +75,34 @@ export class App
             return
         }
         this.#showSpinner()
-        const selectedSource = await this.#setSourceList()
+        const selectedSource = await this.#setSourceList(this.#sckan)
         this.#sourceSelector.onchange = async (e) => {
+            this.#showSpinner()
             // @ts-ignore
             if (e.target.value !== '') {
                 // @ts-ignore
                 await this.#setPathList(e.target.value)
+                this.#sckan = e.target.value
+                this.#updateURL('sckan', e.target.value)
                 if (!this.#selectPath(this.#currentPath)) {
                     this.#clearConnectivity()
                 }
+                this.#hideSpinner()
             }
         }
         await this.#setPathList(selectedSource)
         this.#pathSelector.onchange = async (e) => {
+            this.#showSpinner()
             // @ts-ignore
             if (e.target.value !== '') {
                 // @ts-ignore
                 await this.#showGraph(e.target.value)
+                this.#path = e.target.value
+                this.#updateURL('path', e.target.value)
             } else {
                 this.#clearConnectivity()
             }
+            this.#hideSpinner()
         }
         this.#hideSpinner()
         this.#showPrompt()
@@ -174,6 +186,14 @@ export class App
     //============
     {
         this.#showElement(this.#spinner)
+    }
+
+    #updateURL(key: string, value: string)
+    //====================================
+    {
+        const url = new URL(location)
+        url.searchParams.set(key, value)
+        history.pushState({}, '', url)
     }
 
     async #query(sql: string, params: string[]=[]): Promise<DataValues>
@@ -261,6 +281,7 @@ export class App
                 order by entity`,
             [source])
         const pathList: string[] = ['<option value="">Please select path:</option>']
+        let selectedPath = ''
         this.#knowledgeByPath.clear()
         this.#labelledTerms = new Set()
         for (const [key, jsonKnowledge] of data.values) {
@@ -269,17 +290,26 @@ export class App
                 const label = knowledge.label || key
                 const shortLabel = (label === key.slice(6).replace('-prime', "'").replaceAll('-', ' ')) ? ''
                                  : (label.length < 50) ? label : `${label.slice(0, 50)}...`
-                pathList.push(`<option value="${key}" label="${key}&nbsp;&nbsp;${shortLabel}"></option>`)
+                if (this.#path && this.#path === key) {
+                    pathList.push(`<option value="${key}" selected label="${key}&nbsp;&nbsp;${shortLabel}"></option>`)
+                    selectedPath = key
+                } else {
+                    pathList.push(`<option value="${key}" label="${key}&nbsp;&nbsp;${shortLabel}"></option>`)
+                }
+
                 this.#knowledgeByPath.set(key, knowledge)
                 this.#cacheLabels(knowledge)
             }
         }
         await this.#getCachedTermLabels()
         this.#pathSelector.innerHTML = pathList.join('')
+        if (selectedPath) {
+            await this.#showGraph(selectedPath)
+        }
         return ''
     }
 
-    async #setSourceList(): Promise<string>
+    async #setSourceList(sckanSource: string): Promise<string>
     //=====================================
     {
         const data = await this.#getJsonData<SourceList>(`${this.#mapServer}knowledge/sources`)
@@ -290,7 +320,12 @@ export class App
         const sourceList: string[] = []
         for (const source of sources) {
             if (source) {
-                sourceList.push(`<option value="${source}">${source}</option>`)
+                if (sckanSource && sckanSource === source) {
+                    firstSource = source
+                    sourceList.push(`<option value="${source}" selected>${source}</option>`)
+                } else {
+                    sourceList.push(`<option value="${source}">${source}</option>`)
+                }
                 if (firstSource === '') {
                     firstSource = source
                 }
