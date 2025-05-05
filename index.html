@@ -30,6 +30,7 @@
       }
       .content {
         flex: 1 1 auto;
+        position: relative;
       }
       .inline {
         display: inline-block;
@@ -94,11 +95,7 @@
       #node-key div div {
         width: 90px;
       }
-      .key-box {
-        float: right;
-        width: 12px;
-        height: 12px;
-      }
+
       @keyframes spinner {
         to {transform: rotate(360deg);}
       }
@@ -117,6 +114,61 @@
         border-top-color: #000;
         animation: spinner .8s linear infinite;
         display: none;
+      }
+      .node-key {
+        padding: 0.5rem;
+        font-size: 12px;
+        border: 1px solid gray;
+        background-color: #f7faffaa;
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+      }
+
+      .key-head {
+        text-align: center;
+        font-weight: bold;
+        border-bottom: 1px solid gray;
+        padding-bottom: 4px;
+        margin-bottom: 0.5rem;
+      }
+
+      .key-box-container {
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+      }
+
+      .key-box {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        position: relative;
+        line-height: 1;
+      }
+
+      .key-box::before {
+        content: "";
+        display: block;
+        width: 14px;
+        height: 14px;
+      }
+
+      .key-box-node::before,
+      .key-box-both::before {
+        border: 1px solid gray;
+        border-radius: 2px;
+      }
+
+      .key-box-axon::before {
+        border: 1px solid gray;
+        border-radius: 2px;
+        transform: rotate(45deg);
+      }
+
+      .key-box-dendrite::before {
+        border: 1px solid gray;
+        border-radius: 50%;
       }
     </style>
   </head>
@@ -137,15 +189,19 @@
         <div id='spinner'></div>
         <div id='no-server' class='prompt' >Knowledge store unavailable or out of date...</div>
         <div id='path-prompt' class='prompt'>Please select path above...</div>
-      <div id="node-key">
-        <div class="key-head">Node type:</div>
-        <div>
-          <div><span>Node:</span><span class="key-box" style="background: #80F0F0"/></div>
-          <div><span>Dendrite:</span><span class="key-box" style="background: red"/></div>
-          <div><span>Soma:</span><span class="key-box" style="background: pink"/></div>
-          <div><span>Axon:</span><span class="key-box" style="background: green"/></div>
-      </div>
-    </div>
+        <div class="node-key">
+          <div class="key-box-container">
+            <div class="key-box key-box-dendrite">
+              Origin
+            </div>
+            <div class="key-box key-box-node">
+              Components
+            </div>
+            <div class="key-box key-box-axon">
+              Destination
+            </div>
+          </div>
+        </div>
     </div>
   </body>
   <script type="module" src="index.js"></script>
