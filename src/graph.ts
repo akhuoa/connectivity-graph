@@ -158,53 +158,84 @@ export class ConnectivityGraph
 
 //==============================================================================
 
+const APP_PRIMARY_COLOR = '#8300bf'
+const BG_COLOR = '#f3ecf6'
 const GRAPH_STYLE = [
     {
         'selector': 'node',
         'style': {
-            'label': 'data(label)',
-            'background-color': '#80F0F0',
+            'label': function(ele) { return trimLabel(ele.data('label')) },
+            // 'background-color': '#80F0F0',
+            'background-color': 'transparent',
+            'background-opacity': '0',
             'text-valign': 'center',
             'text-wrap': 'wrap',
+            'width': '80px',
+            'height': '80px',
             'text-max-width': '80px',
-            'font-size': '6px'
+            'font-size': '6px',
+            'shape': 'round-rectangle',
+            'border-width': 1,
+            'border-style': 'solid',
+            'border-color': 'gray',
         }
     },
     {
         'selector': 'node[axon]',
         'style': {
-            'background-color': 'green'
+            // 'background-color': 'green',
+            'shape': 'round-diamond',
+            'width': '100px',
+            'height': '100px',
         }
     },
     {
         'selector': 'node[dendrite]',
         'style': {
-            'background-color': 'red'
+            // 'background-color': 'red',
+            'shape': 'ellipse',
         }
     },
     {
-        'selector': 'node[soma]',
+        'selector': 'node[somas]',
         'style': {
-            'background-color': 'pink'
-        }
-    },
-    {
-        'selector': 'node[both-a-d]',
-        'style': {
-            'background-color': 'gray'
+            // 'background-color': 'gray',
+            'shape': 'round-rectangle',
         }
     },
     {
         'selector': 'edge',
         'style': {
-            'width': 2,
-            'line-color': '#9dbaea',
-            'target-arrow-color': '#9dbaea',
-            'target-arrow-shape': 'triangle',
+            'width': 1,
+            'line-color': 'dimgray',
             'curve-style': 'bezier'
+        }
+    },
+    {
+        'selector': 'node.active',
+        'style': {
+            'border-color': APP_PRIMARY_COLOR,
+            'background-color': BG_COLOR,
+            'background-opacity': 0.75,
         }
     }
 ]
+
+function trimLabel(label: string) {
+    const labels = label.split('\n')
+    const half = labels.length/2
+    const trimLabels = labels.slice(half)
+    return capitalizeLabels(trimLabels.join('\n'))
+}
+
+function capitalizeLabels(input: string) {
+    return input.split('\n').map(label => {
+        if (label && label[0] >= 'a' && label[0] <= 'z') {
+            return label.charAt(0).toUpperCase() + label.slice(1)
+        }
+        return label
+    }).join('\n')
+}
 
 //==============================================================================
 
