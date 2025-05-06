@@ -55,6 +55,7 @@ export class App
     #pathSelector: HTMLSelectElement
     #sourceSelector: HTMLSelectElement
     #layoutSelector: HTMLSelectElement
+    #pathSearch: HTMLInputElement
     #spinner: HTMLElement
 
     constructor(mapServer: string, sckan: string, path: string, layout: string)
@@ -67,6 +68,7 @@ export class App
         this.#pathSelector = document.getElementById('path-selector') as HTMLSelectElement
         this.#sourceSelector = document.getElementById('source-selector') as HTMLSelectElement
         this.#layoutSelector = document.getElementById('layout-selector') as HTMLSelectElement
+        this.#pathSearch = document.getElementById('path-search') as HTMLInputElement
         this.#spinner = document.getElementById('spinner')
     }
 
@@ -212,6 +214,7 @@ export class App
         this.#pathSelector.disabled = true
         this.#layoutSelector.disabled = true
         this.#sourceSelector.disabled = true
+        this.#pathSearch.disabled = true
     }
     #enableTools()
     //=============
@@ -219,6 +222,7 @@ export class App
         this.#pathSelector.disabled = false
         this.#layoutSelector.disabled = false
         this.#sourceSelector.disabled = false
+        this.#pathSearch.disabled = false
     }
 
     #updateURL(key: string, value: string)
