@@ -121,6 +121,25 @@ export class App
             this.#updateURL('layout', this.#layout)
             this.#hideSpinner()
         }
+        this.#pathSearch.oninput = (e) => {
+            const target = e.target as HTMLInputElement
+            const searchValue = target.value.toLowerCase()
+            const options = this.#pathSelector.options
+
+            for (let i = 1; i < options.length; i++) {
+              const option = options[i]
+              const text = option.label.toLowerCase()
+              const found = text.includes(searchValue) || text.includes(searchValue.split(/\s+/g).join('-'))
+              option.style.display = !searchValue.trim().length || found ? '' : 'none'
+            }
+            if (searchValue.trim().length) {
+              this.#pathSelector.size = 10
+            } else {
+              this.#pathSelector.size = 1
+            }
+            this.#pathSelector.addEventListener('blur', () => this.#pathSelector.size = 1)
+            this.#pathSelector.addEventListener('change', () => this.#pathSelector.size = 1)
+        }
         this.#hideSpinner()
         this.#enableTools()
         if (!this.#path) {

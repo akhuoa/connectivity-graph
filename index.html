@@ -198,28 +198,7 @@
           <select id="path-selector" class="selector"></select>
         </span>
         <span class="inline">
-          <input type="search" id="path-search" placeholder="Search path" oninput="filterPaths()">
-          <script>
-          function filterPaths() {
-            const searchInput = document.getElementById('path-search').value.toLowerCase();
-            const select = document.getElementById('path-selector');
-            const options = select.options;
-
-            for (let i = 1; i < options.length; i++) {
-              const option = options[i];
-              const text = option.label.toLowerCase();
-              const found = text.includes(searchInput) || text.includes(searchInput.split(/\s+/g).join('-'))
-              option.style.display = !searchInput.trim().length || found ? '' : 'none';
-            }
-            if (searchInput.trim().length) {
-              select.size = 10
-            } else {
-              select.size = 1
-            }
-            select.addEventListener('blur', () => select.size = 1);
-            select.addEventListener('change', () => select.size = 1);
-          }
-          </script>
+          <input type="search" id="path-search" placeholder="Search path">
         </span>
         <span  class="inline">
           <label for="layout-selector">Layout:</label>
