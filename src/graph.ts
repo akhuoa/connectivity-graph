@@ -19,6 +19,8 @@ limitations under the License.
 ==============================================================================*/
 
 import cytoscape from 'cytoscape'
+import dagre from 'cytoscape-dagre'
+cytoscape.use( dagre );
 
 //==============================================================================
 
@@ -95,10 +97,10 @@ export class ConnectivityGraph
         }
     }
 
-    showConnectivity()
+    showConnectivity(layout: string)
     //================
     {
-        this.#cy = new CytoscapeGraph(this)
+        this.#cy = new CytoscapeGraph(this, layout)
     }
 
     clearConnectivity()
@@ -244,18 +246,44 @@ class CytoscapeGraph
     #cy
     #tooltip: HTMLElement
 
-    constructor(connectivityGraph: ConnectivityGraph)
+    constructor(connectivityGraph: ConnectivityGraph, layout: string)
     {
         const graphCanvas = document.getElementById('graph-canvas')
+        let layoutOption = {}
+        const layoutDefault = {
+            name: 'breadthfirst',
+            circle: false,
+            roots: connectivityGraph.roots
+        }
+        const layoutBreadthfirstFix = {
+            name: 'breadthfirst',
+            directed: true,
+            depthSort: function (a: any, b: any) {
+                return a.data('id') - b.data('id');
+            },
+            roots: connectivityGraph.roots.length ? connectivityGraph.roots : undefined,
+        }
+        const layoutDagre = {
+            name: 'dagre',
+            nodeSep: 150,
+            edgeSep: 50,
+            rankSep: 100,
+            rankDir: 'TB',
+            roots: connectivityGraph.roots.length ? connectivityGraph.roots : undefined,
+        }
+
+        if (layout === 'breadthfirst-fix') {
+            layoutOption = layoutBreadthfirstFix
+        } else if (layout === 'dagre') {
+            layoutOption = layoutDagre
+        } else {
+            layoutOption = layoutDefault
+        }
 
         this.#cy = cytoscape({
             container: graphCanvas,
             elements: connectivityGraph.elements,
-            layout: {
-                name: 'breadthfirst',
-                circle: false,
-                roots: connectivityGraph.roots
-            },
+            layout: layoutOption,
             directed: true,
             style: GRAPH_STYLE
         }).on('mouseover', 'node', this.#overNode.bind(this))

@@ -26,10 +26,11 @@ const searchParams = new URLSearchParams(location.search)
 const MAP_SERVER = searchParams.get('server')
 const SCKAN = searchParams.get('sckan')
 const PATH = searchParams.get('path')
+const LAYOUT = searchParams.get('layout')
 
 //==============================================================================
 
-const app = new App(MAP_SERVER, SCKAN, PATH)
+const app = new App(MAP_SERVER, SCKAN, PATH, LAYOUT)
 
 await app.run()
 

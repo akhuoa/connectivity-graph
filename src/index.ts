@@ -50,19 +50,23 @@ export class App
     #mapServer: string
     #sckan: string
     #path: string
+    #layout: string
     #pathPrompt: HTMLElement
     #pathSelector: HTMLElement
     #sourceSelector: HTMLElement
+    #layoutSelector: HTMLElement
     #spinner: HTMLElement
 
-    constructor(mapServer: string, sckan: string, path: string)
+    constructor(mapServer: string, sckan: string, path: string, layout: string)
     {
         this.#mapServer = mapServer
         this.#sckan = sckan
         this.#path = path
+        this.#layout = layout
         this.#pathPrompt = document.getElementById('path-prompt')
         this.#pathSelector = document.getElementById('path-selector')
         this.#sourceSelector = document.getElementById('source-selector')
+        this.#layoutSelector = document.getElementById('layout-selector')
         this.#spinner = document.getElementById('spinner')
     }
 
@@ -80,9 +84,9 @@ export class App
             const target = e.target as HTMLSelectElement
             this.#showSpinner()
             if (target.value !== '') {
-                await this.#setPathList(target.value)
                 this.#sckan = target.value
-                this.#updateURL('sckan', target.value)
+                await this.#setPathList(this.#sckan)
+                this.#updateURL('sckan', this.#sckan)
                 if (!this.#selectPath(this.#currentPath)) {
                     this.#clearConnectivity()
                 }
@@ -94,16 +98,27 @@ export class App
             const target = e.target as HTMLSelectElement
             this.#showSpinner()
             if (target.value !== '') {
-                await this.#showGraph(target.value)
                 this.#path = target.value
-                this.#updateURL('path', target.value)
+                await this.#showGraph(this.#path, this.#layout)
+                this.#updateURL('path', this.#path)
             } else {
                 this.#clearConnectivity()
+                this.#showPrompt()
             }
             this.#hideSpinner()
         }
+        this.#layoutSelector.onchange = async (e) => {
+            const target = e.target as HTMLSelectElement
+            this.#showSpinner()
+            this.#layout = target.value
+            await this.#showGraph(this.#path, this.#layout)
+            this.#updateURL('layout', this.#layout)
+            this.#hideSpinner()
+        }
         this.#hideSpinner()
-        this.#showPrompt()
+        if (!this.#path) {
+            this.#showPrompt()
+        }
     }
 
 
@@ -135,15 +150,15 @@ export class App
         return data ? (+data.version || 0) : 0
     }
 
-    async #showGraph(neuronPath: string)
+    async #showGraph(neuronPath: string, layout: string)
     //==================================
     {
-        this.#hidePrompt()
         this.#showSpinner()
         this.#connectivityGraph = new ConnectivityGraph(this.#labelCache)
         await this.#connectivityGraph.addConnectivity(this.#knowledgeByPath.get(neuronPath))
         this.#hideSpinner()
-        this.#connectivityGraph.showConnectivity()
+        this.#hidePrompt()
+        this.#connectivityGraph.showConnectivity(layout)
         this.#currentPath = neuronPath
     }
 
@@ -302,7 +317,7 @@ export class App
         await this.#getCachedTermLabels()
         this.#pathSelector.innerHTML = pathList.join('')
         if (selectedPath) {
-            await this.#showGraph(selectedPath)
+            await this.#showGraph(selectedPath, this.#layout)
         }
         return ''
     }

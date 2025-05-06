@@ -183,11 +183,21 @@
           <label for="path-selector">Neuron Path:</label>
           <select id="path-selector" class="selector"></select>
         </span>
+        <span  class="inline">
+          <label for="layout-selector">Layout:</label>
+          <select id="layout-selector" class="selector">
+            <option value="breadthfirst">Breadthfirst</option>
+            <option value="breadthfirst-fix">Breadthfirst with fix</option>
+            <option value="dagre">Dagre</option>
+          </select>
+        </span>
       </div>
       <div class="content">
         <div id="graph-canvas"></div>
         <div id='spinner'></div>
-        <div id='no-server' class='prompt' >Knowledge store unavailable or out of date...</div>
+        <div id='no-server' class='prompt'>
+          Knowledge store unavailable or out of date or missing URL parameters...
+        </div>
         <div id='path-prompt' class='prompt'>Please select path above...</div>
         <div class="node-key">
           <div class="key-box-container">
