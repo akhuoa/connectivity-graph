@@ -107,6 +107,9 @@ export class App
             }
             this.#hideSpinner()
         }
+        if (this.#layout) {
+            (this.#layoutSelector as HTMLSelectElement).value = this.#layout
+        }
         this.#layoutSelector.onchange = async (e) => {
             const target = e.target as HTMLSelectElement
             this.#showSpinner()
