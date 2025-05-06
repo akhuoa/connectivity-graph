@@ -52,9 +52,9 @@ export class App
     #path: string
     #layout: string
     #pathPrompt: HTMLElement
-    #pathSelector: HTMLElement
-    #sourceSelector: HTMLElement
-    #layoutSelector: HTMLElement
+    #pathSelector: HTMLSelectElement
+    #sourceSelector: HTMLSelectElement
+    #layoutSelector: HTMLSelectElement
     #spinner: HTMLElement
 
     constructor(mapServer: string, sckan: string, path: string, layout: string)
@@ -64,15 +64,16 @@ export class App
         this.#path = path
         this.#layout = layout
         this.#pathPrompt = document.getElementById('path-prompt')
-        this.#pathSelector = document.getElementById('path-selector')
-        this.#sourceSelector = document.getElementById('source-selector')
-        this.#layoutSelector = document.getElementById('layout-selector')
+        this.#pathSelector = document.getElementById('path-selector') as HTMLSelectElement
+        this.#sourceSelector = document.getElementById('source-selector') as HTMLSelectElement
+        this.#layoutSelector = document.getElementById('layout-selector') as HTMLSelectElement
         this.#spinner = document.getElementById('spinner')
     }
 
     async run()
     //=========
     {
+        this.#disableTools()
         const schemaVersion = await this.#getSchemaVersion()
         if (schemaVersion < MIN_SCHEMA_VERSION) {
             this.#showElement(document.getElementById('no-server'))
@@ -119,6 +120,7 @@ export class App
             this.#hideSpinner()
         }
         this.#hideSpinner()
+        this.#enableTools()
         if (!this.#path) {
             this.#showPrompt()
         }
@@ -202,6 +204,21 @@ export class App
     //============
     {
         this.#showElement(this.#spinner)
+    }
+
+    #disableTools()
+    //=============
+    {
+        this.#pathSelector.disabled = true
+        this.#layoutSelector.disabled = true
+        this.#sourceSelector.disabled = true
+    }
+    #enableTools()
+    //=============
+    {
+        this.#pathSelector.disabled = false
+        this.#layoutSelector.disabled = false
+        this.#sourceSelector.disabled = false
     }
 
     #updateURL(key: string, value: string)
