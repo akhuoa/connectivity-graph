@@ -54,7 +54,7 @@ export class App
     #labelCache: Map<string, string> = new Map()
     #labelledTerms: Set<string> = new Set()
     #mapServer: string
-    #sckan: string
+    #source: string
     #path: string
     #layout: string
     #pathPrompt: HTMLElement
@@ -65,12 +65,11 @@ export class App
     #sourceFromMap: boolean
     #connectivityFromMap: ConnectivityKnowledge|null
     #spinner: HTMLElement
-    #mapuuid: string
 
-    constructor(mapServer: string, sckan: string, path: string, layout: string)
+    constructor(mapServer: string, source: string, path: string, layout: string)
     {
         this.#mapServer = mapServer
-        this.#sckan = sckan
+        this.#source = source
         this.#path = path
         this.#layout = layout
         this.#pathPrompt = document.getElementById('path-prompt')
@@ -79,9 +78,8 @@ export class App
         this.#layoutSelector = document.getElementById('layout-selector') as HTMLSelectElement
         this.#pathSearch = document.getElementById('path-search') as HTMLInputElement
         this.#spinner = document.getElementById('spinner')
-        this.#sourceFromMap = false
+        this.#sourceFromMap = source && !source.startsWith('sckan') ? true : false
         this.#connectivityFromMap = emptyConnectivity
-        this.#mapuuid = ''
     }
 
     async run()
@@ -94,27 +92,27 @@ export class App
             return
         }
         this.#showSpinner()
-        const selectedSource = await this.#setSourceList(this.#sckan)
+        const selectedSource = await this.#setSourceList(this.#source)
+
         this.#sourceSelector.onchange = async (e) => {
             const target = e.target as HTMLSelectElement
             this.#showSpinner()
             if (target.value !== '') {
+                this.#source = target.value
+
                 if (target.value.startsWith('sckan')) {
-                    this.#sckan = target.value
                     this.#sourceFromMap = false
-                    await this.#setPathList(this.#sckan)
-                    this.#updateURL('sckan', this.#sckan)
+                    await this.#setPathList(this.#source)
                     if (!this.#selectPath(this.#currentPath)) {
                         this.#clearConnectivity()
                     }
-                    this.#hideSpinner()
                 } else {
-                    this.#mapuuid = target.value
-                    this.#showSpinner()
                     this.#sourceFromMap = true
                     await this.#showGraph(this.#path, this.#layout)
-                    this.#hideSpinner()
                 }
+
+                this.#updateURL('source', this.#source)
+                this.#hideSpinner()
             }
         }
         await this.#setPathList(selectedSource)
@@ -202,8 +200,9 @@ export class App
     {
         this.#showSpinner()
         let connectivityInfo = this.#knowledgeByPath.get(neuronPath)
-        if (this.#sourceFromMap && this.#mapuuid) {
-            this.#connectivityFromMap = await this.#fetchMapConnectivity(this.#mapuuid, neuronPath)
+
+        if (this.#sourceFromMap) {
+            this.#connectivityFromMap = await this.#fetchMapConnectivity(this.#source, neuronPath)
             connectivityInfo = this.#connectivityFromMap
 
             // Update label data
@@ -413,7 +412,7 @@ export class App
         return ''
     }
 
-    async #setSourceList(sckanSource: string): Promise<string>
+    async #setSourceList(selectedSource: string): Promise<string>
     //=====================================
     {
         const data = await this.#getJsonData<SourceList>(`${this.#mapServer}knowledge/sources`)
@@ -425,7 +424,7 @@ export class App
         sourceList.push('<optgroup label="SCKAN Release:">')
         for (const source of sources) {
             if (source) {
-                if (sckanSource && sckanSource === source) {
+                if (selectedSource && selectedSource === source) {
                     firstSource = source
                     sourceList.push(`<option value="${source}" selected>${source}</option>`)
                 } else {
@@ -438,7 +437,8 @@ export class App
         }
         sourceList.push('</optgroup>')
         sourceList.push('<optgroup label="MAP:">')
-        sourceList.push(`<option value="b4ae1699-5690-5640-97b7-d711ae02dcb9">Rat</option>`)
+        const ratUUID = "b4ae1699-5690-5640-97b7-d711ae02dcb9"
+        sourceList.push(`<option value="${ratUUID}" ${selectedSource === ratUUID ? 'selected' : ''}>Rat</option>`)
         sourceList.push('</optgroup">')
         this.#sourceSelector.innerHTML = sourceList.join('')
         return firstSource

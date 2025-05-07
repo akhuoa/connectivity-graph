@@ -24,13 +24,13 @@ import { App } from './src'
 
 const searchParams = new URLSearchParams(location.search)
 const MAP_SERVER = searchParams.get('server')
-const SCKAN = searchParams.get('sckan')
+const SOURCE = searchParams.get('source')
 const PATH = searchParams.get('path')
 const LAYOUT = searchParams.get('layout')
 
 //==============================================================================
 
-const app = new App(MAP_SERVER, SCKAN, PATH, LAYOUT)
+const app = new App(MAP_SERVER, SOURCE, PATH, LAYOUT)
 
 await app.run()
 
