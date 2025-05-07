@@ -23,6 +23,12 @@ import { ConnectivityGraph, ConnectivityKnowledge, KnowledgeNode } from './graph
 //==============================================================================
 
 const MIN_SCHEMA_VERSION = 1.3
+const emptyConnectivity = {
+    connectivity: [],
+    axons: [],
+    dendrites: [],
+    somas: []
+}
 
 //==============================================================================
 
@@ -56,7 +62,10 @@ export class App
     #sourceSelector: HTMLSelectElement
     #layoutSelector: HTMLSelectElement
     #pathSearch: HTMLInputElement
+    #sourceFromMap: boolean
+    #connectivityFromMap: ConnectivityKnowledge|null
     #spinner: HTMLElement
+    #mapuuid: string
 
     constructor(mapServer: string, sckan: string, path: string, layout: string)
     {
@@ -70,6 +79,9 @@ export class App
         this.#layoutSelector = document.getElementById('layout-selector') as HTMLSelectElement
         this.#pathSearch = document.getElementById('path-search') as HTMLInputElement
         this.#spinner = document.getElementById('spinner')
+        this.#sourceFromMap = false
+        this.#connectivityFromMap = emptyConnectivity
+        this.#mapuuid = ''
     }
 
     async run()
@@ -87,13 +99,22 @@ export class App
             const target = e.target as HTMLSelectElement
             this.#showSpinner()
             if (target.value !== '') {
-                this.#sckan = target.value
-                await this.#setPathList(this.#sckan)
-                this.#updateURL('sckan', this.#sckan)
-                if (!this.#selectPath(this.#currentPath)) {
-                    this.#clearConnectivity()
+                if (target.value.startsWith('sckan')) {
+                    this.#sckan = target.value
+                    this.#sourceFromMap = false
+                    await this.#setPathList(this.#sckan)
+                    this.#updateURL('sckan', this.#sckan)
+                    if (!this.#selectPath(this.#currentPath)) {
+                        this.#clearConnectivity()
+                    }
+                    this.#hideSpinner()
+                } else {
+                    this.#mapuuid = target.value
+                    this.#showSpinner()
+                    this.#sourceFromMap = true
+                    await this.#showGraph(this.#path, this.#layout)
+                    this.#hideSpinner()
                 }
-                this.#hideSpinner()
             }
         }
         await this.#setPathList(selectedSource)
@@ -180,8 +201,19 @@ export class App
     //==================================
     {
         this.#showSpinner()
+        let connectivityInfo = this.#knowledgeByPath.get(neuronPath)
+        if (this.#sourceFromMap && this.#mapuuid) {
+            this.#connectivityFromMap = await this.#fetchMapConnectivity(this.#mapuuid, neuronPath)
+            connectivityInfo = this.#connectivityFromMap
+
+            // Update label data
+            if (this.#connectivityFromMap.connectivity.length) {
+                this.#cacheLabels(this.#connectivityFromMap);
+                await this.#getCachedTermLabels();
+            }
+        }
         this.#connectivityGraph = new ConnectivityGraph(this.#labelCache)
-        await this.#connectivityGraph.addConnectivity(this.#knowledgeByPath.get(neuronPath))
+        await this.#connectivityGraph.addConnectivity(connectivityInfo)
         this.#hideSpinner()
         this.#hidePrompt()
         this.#connectivityGraph.showConnectivity(layout)
@@ -250,6 +282,22 @@ export class App
         const url = new URL(location.href)
         url.searchParams.set(key, value)
         history.pushState({}, '', url)
+    }
+
+    async #fetchMapConnectivity(mapuuid: string, pathId: string)
+    //===========================================================
+    {
+        const url = this.#mapServer + `flatmap/${mapuuid}/connectivity/${pathId}`
+
+        try {
+            const response = await fetch(url)
+            if (!response.ok) {
+                return emptyConnectivity
+            }
+            return await response.json()
+        } catch (error) {
+            return emptyConnectivity
+        }
     }
 
     async #query(sql: string, params: string[]=[]): Promise<DataValues>
@@ -374,6 +422,7 @@ export class App
         // Order with most recent first...
         let firstSource = ''
         const sourceList: string[] = []
+        sourceList.push('<optgroup label="SCKAN Release:">')
         for (const source of sources) {
             if (source) {
                 if (sckanSource && sckanSource === source) {
@@ -387,6 +436,10 @@ export class App
                 }
             }
         }
+        sourceList.push('</optgroup>')
+        sourceList.push('<optgroup label="MAP:">')
+        sourceList.push(`<option value="b4ae1699-5690-5640-97b7-d711ae02dcb9">Rat</option>`)
+        sourceList.push('</optgroup">')
         this.#sourceSelector.innerHTML = sourceList.join('')
         return firstSource
     }
