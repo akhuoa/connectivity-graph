@@ -437,8 +437,20 @@ export class App
         }
         sourceList.push('</optgroup>')
         sourceList.push('<optgroup label="MAP:">')
-        const ratUUID = "b4ae1699-5690-5640-97b7-d711ae02dcb9"
-        sourceList.push(`<option value="${ratUUID}" ${selectedSource === ratUUID ? 'selected' : ''}>Rat</option>`)
+        const flatmaps = [
+            {
+                name: 'Rat',
+                uuid: 'b4ae1699-5690-5640-97b7-d711ae02dcb9'
+            },
+            {
+                name: 'Human Male',
+                uuid: '77e45958-8aef-5a50-9626-b8d3905abdb3'
+            },
+        ]
+        flatmaps.forEach((flatmap) => {
+            const { name, uuid } = flatmap
+            sourceList.push(`<option value="${uuid}" ${selectedSource === uuid ? 'selected' : ''}>${name}</option>`)
+        })
         sourceList.push('</optgroup">')
         this.#sourceSelector.innerHTML = sourceList.join('')
         return firstSource
