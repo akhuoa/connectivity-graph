@@ -440,7 +440,7 @@ export class App
         const flatmaps = [
             {
                 name: 'Rat',
-                uuid: 'b4ae1699-5690-5640-97b7-d711ae02dcb9'
+                uuid: '2eec0c9d-affc-5000-8ffa-cfc4308dcf22'
             },
             {
                 name: 'Human Male',
