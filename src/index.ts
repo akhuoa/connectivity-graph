@@ -23,6 +23,16 @@ import { ConnectivityGraph, ConnectivityKnowledge, KnowledgeNode } from './graph
 //==============================================================================
 
 const MIN_SCHEMA_VERSION = 1.3
+const MAPS_TO_SHOW = [
+    {
+        name: 'Rat',
+        id: 'rat-flatmap',
+    },
+    {
+        name: 'Human Male',
+        id: 'human-flatmap_male',
+    },
+]
 const emptyConnectivity = {
     connectivity: [],
     axons: [],
@@ -412,6 +422,20 @@ export class App
         return ''
     }
 
+    async #getAvailableMaps()
+    //================
+    {
+        try {
+            const response = await fetch(this.#mapServer)
+            if (!response.ok) {
+                return []
+            }
+            return await response.json()
+        } catch (error) {
+            return []
+        }
+    }
+
     async #setSourceList(selectedSource: string): Promise<string>
     //=====================================
     {
@@ -437,20 +461,37 @@ export class App
         }
         sourceList.push('</optgroup>')
         sourceList.push('<optgroup label="MAP:">')
-        const flatmaps = [
-            {
-                name: 'Rat',
-                uuid: '2eec0c9d-affc-5000-8ffa-cfc4308dcf22'
-            },
-            {
-                name: 'Human Male',
-                uuid: '77e45958-8aef-5a50-9626-b8d3905abdb3'
-            },
-        ]
-        flatmaps.forEach((flatmap) => {
-            const { name, uuid } = flatmap
-            sourceList.push(`<option value="${uuid}" ${selectedSource === uuid ? 'selected' : ''}>${name}</option>`)
+
+        const availableMaps = []
+        const mapSources = await this.#getAvailableMaps()
+
+        mapSources.forEach((map: any) => {
+            const { id, created } = map
+            const duplicatedMap = availableMaps.find(_map => _map.id === id)
+            const duplicatedMapIndex = availableMaps.findIndex(_map => _map.id === id)
+
+            if (duplicatedMap) {
+                if (duplicatedMap.created < created) {
+                    availableMaps.splice(duplicatedMapIndex, 1, map)
+                }
+            } else {
+                availableMaps.push(map)
+            }
+        });
+
+        availableMaps.forEach((map) => {
+            const { id, uuid } = map
+            const mapToShow = MAPS_TO_SHOW.find(_map => _map.id === id)
+
+            if (mapToShow) {
+                sourceList.push(`
+                    <option value="${uuid}" ${selectedSource === uuid ? 'selected' : ''}>
+                        ${mapToShow.name}
+                    </option>
+                `)
+            }
         })
+
         sourceList.push('</optgroup">')
         this.#sourceSelector.innerHTML = sourceList.join('')
         return firstSource
