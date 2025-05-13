@@ -44,10 +44,6 @@
         display: block;
         position: relative;
       }
-      .selector {
-        width: 200px;
-        margin-left: 4px;
-      }
       #path-selector {
         width: 300px;
         /* margin-right: 10px; */
@@ -186,6 +182,10 @@
   <body>
     <div class="container">
       <div class='top-bar'>
+        <span  class="inline">
+          <label for="server-selector">Server:</label>
+          <select id="server-selector" class="selector"></select>
+        </span>
         <span class="inline">
           <label for="source-selector">Source:</label>
           <select id="source-selector" class="selector"></select>

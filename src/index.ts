@@ -39,6 +39,12 @@ const emptyConnectivity = {
     dendrites: [],
     somas: []
 }
+const MAP_ENDPOINTS = {
+    curation: 'https://mapcore-demo.org/curation/flatmap/',
+    devel: 'https://mapcore-demo.org/devel/flatmap/v4/',
+    staging: 'https://mapcore-demo.org/staging/flatmap/v1/',
+    production: 'https://mapcore-demo.org/current/flatmap/v3/',
+}
 
 //==============================================================================
 
@@ -69,6 +75,7 @@ export class App
     #layout: string
     #pathPrompt: HTMLElement
     #pathSelector: HTMLSelectElement
+    #serverSelector: HTMLSelectElement
     #sourceSelector: HTMLSelectElement
     #layoutSelector: HTMLSelectElement
     #pathSearch: HTMLInputElement
@@ -84,6 +91,7 @@ export class App
         this.#layout = layout
         this.#pathPrompt = document.getElementById('path-prompt')
         this.#pathSelector = document.getElementById('path-selector') as HTMLSelectElement
+        this.#serverSelector = document.getElementById('server-selector') as HTMLSelectElement
         this.#sourceSelector = document.getElementById('source-selector') as HTMLSelectElement
         this.#layoutSelector = document.getElementById('layout-selector') as HTMLSelectElement
         this.#pathSearch = document.getElementById('path-search') as HTMLInputElement
@@ -96,13 +104,39 @@ export class App
     //=========
     {
         this.#disableTools()
+        this.#setServerList()
         const schemaVersion = await this.#getSchemaVersion()
         if (schemaVersion < MIN_SCHEMA_VERSION) {
             this.#showElement(document.getElementById('no-server'))
             return
         }
         this.#showSpinner()
-        const selectedSource = await this.#setSourceList(this.#source)
+
+        await this.#setSourceList()
+        await this.#setPathList()
+
+        if (this.#layout) {
+            (this.#layoutSelector as HTMLSelectElement).value = this.#layout
+        }
+
+        await this.#showGraph(this.#path, this.#layout)
+
+        this.#hideSpinner()
+        this.#enableTools()
+        if (!this.#path) {
+            this.#showPrompt()
+        }
+
+        this.#serverSelector.onchange = async (e) => {
+            const target = e.target as HTMLSelectElement
+            this.#showSpinner()
+            this.#mapServer = target.value
+            await this.#setSourceList()
+            await this.#setPathList()
+            await this.#showGraph(this.#path, this.#layout)
+            this.#updateURL('server', this.#mapServer)
+            this.#hideSpinner()
+        }
 
         this.#sourceSelector.onchange = async (e) => {
             const target = e.target as HTMLSelectElement
@@ -112,12 +146,14 @@ export class App
 
                 if (target.value.startsWith('sckan')) {
                     this.#sourceFromMap = false
-                    await this.#setPathList(this.#source)
+                    await this.#setPathList()
+                    await this.#showGraph(this.#path, this.#layout)
                     if (!this.#selectPath(this.#currentPath)) {
                         this.#clearConnectivity()
                     }
                 } else {
                     this.#sourceFromMap = true
+                    await this.#setPathList()
                     await this.#showGraph(this.#path, this.#layout)
                 }
 
@@ -125,7 +161,7 @@ export class App
                 this.#hideSpinner()
             }
         }
-        await this.#setPathList(selectedSource)
+
         this.#pathSelector.onchange = async (e) => {
             const target = e.target as HTMLSelectElement
             this.#showSpinner()
@@ -139,9 +175,7 @@ export class App
             }
             this.#hideSpinner()
         }
-        if (this.#layout) {
-            (this.#layoutSelector as HTMLSelectElement).value = this.#layout
-        }
+
         this.#layoutSelector.onchange = async (e) => {
             const target = e.target as HTMLSelectElement
             this.#showSpinner()
@@ -150,6 +184,7 @@ export class App
             this.#updateURL('layout', this.#layout)
             this.#hideSpinner()
         }
+
         this.#pathSearch.oninput = (e) => {
             const target = e.target as HTMLInputElement
             const searchValue = target.value.toLowerCase()
@@ -168,11 +203,6 @@ export class App
             }
             this.#pathSelector.addEventListener('blur', () => this.#pathSelector.size = 1)
             this.#pathSelector.addEventListener('change', () => this.#pathSelector.size = 1)
-        }
-        this.#hideSpinner()
-        this.#enableTools()
-        if (!this.#path) {
-            this.#showPrompt()
         }
     }
 
@@ -208,25 +238,29 @@ export class App
     async #showGraph(neuronPath: string, layout: string)
     //==================================
     {
-        this.#showSpinner()
-        let connectivityInfo = this.#knowledgeByPath.get(neuronPath)
+        if (this.#path) {
+            this.#showSpinner()
+            let connectivityInfo = this.#knowledgeByPath.get(this.#path)
 
-        if (this.#sourceFromMap) {
-            this.#connectivityFromMap = await this.#fetchMapConnectivity(this.#source, neuronPath)
-            connectivityInfo = this.#connectivityFromMap
+            if (this.#sourceFromMap) {
+                this.#connectivityFromMap = await this.#fetchMapConnectivity(this.#source, this.#path)
+                connectivityInfo = this.#connectivityFromMap
 
-            // Update label data
-            if (this.#connectivityFromMap.connectivity.length) {
-                this.#cacheLabels(this.#connectivityFromMap);
-                await this.#getCachedTermLabels();
+                // Update label data
+                if (this.#connectivityFromMap.connectivity.length) {
+                    this.#cacheLabels(this.#connectivityFromMap);
+                    await this.#getCachedTermLabels();
+                }
             }
+            this.#connectivityGraph = new ConnectivityGraph(this.#labelCache)
+            await this.#connectivityGraph.addConnectivity(connectivityInfo)
+            this.#hideSpinner()
+            this.#hidePrompt()
+            this.#connectivityGraph.showConnectivity(this.#layout)
+            this.#currentPath = this.#path
+        } else {
+            this.#showPrompt()
         }
-        this.#connectivityGraph = new ConnectivityGraph(this.#labelCache)
-        await this.#connectivityGraph.addConnectivity(connectivityInfo)
-        this.#hideSpinner()
-        this.#hidePrompt()
-        this.#connectivityGraph.showConnectivity(layout)
-        this.#currentPath = neuronPath
     }
 
     #clearConnectivity()
@@ -385,41 +419,92 @@ export class App
         return false
     }
 
-    async #setPathList(source: string): Promise<string>
-    //=================================================
+    async #queryMapPaths(): Promise<any>
+    {
+        const url = this.#mapServer + `flatmap/${this.#source}/pathways`;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.error(`Response status: ${response.status}`);
+                return null
+            }
+            return await response.json();
+        } catch (error) {
+            console.error(error)
+            return null
+        }
+    }
+
+    async #setPathsFromMap()
+    {
+        const data = await this.#queryMapPaths()
+
+        if (data?.paths) {
+            const connectivityPaths = []
+            for (const key in data.paths) {
+                const item = data.paths[key]
+                if (item.connectivity?.length) {
+                    connectivityPaths.push(key)
+                }
+            }
+            return connectivityPaths.map(item => ({
+                value: item,
+                label: '',
+            }))
+        } else {
+            return []
+        }
+    }
+
+    async #setPathsFromSCKAN()
     {
         const data = await this.#query(
             `select entity, knowledge from knowledge
                 where entity like 'ilxtr:%' and source=?
                 order by entity`,
-            [source])
-        const pathList: string[] = ['<option value="">Please select path:</option>']
-        let selectedPath = ''
-        this.#knowledgeByPath.clear()
-        this.#labelledTerms = new Set()
+            [this.#source])
+
+        const pathsData = []
         for (const [key, jsonKnowledge] of data.values) {
             const knowledge = JSON.parse(jsonKnowledge)
             if ('connectivity' in knowledge) {
                 const label = knowledge.label || key
                 const shortLabel = (label === key.slice(6).replace('-prime', "'").replaceAll('-', ' ')) ? ''
                                  : (label.length < 50) ? label : `${label.slice(0, 50)}...`
-                if (this.#path && this.#path === key) {
-                    pathList.push(`<option value="${key}" selected label="${key}&nbsp;&nbsp;${shortLabel}"></option>`)
-                    selectedPath = key
-                } else {
-                    pathList.push(`<option value="${key}" label="${key}&nbsp;&nbsp;${shortLabel}"></option>`)
-                }
-
+                pathsData.push({
+                    value: key,
+                    label: shortLabel,
+                })
                 this.#knowledgeByPath.set(key, knowledge)
                 this.#cacheLabels(knowledge)
             }
         }
+        return pathsData
+    }
+
+    async #setPathList()
+    //=================================================
+    {
+        this.#knowledgeByPath.clear()
+        this.#labelledTerms = new Set()
+
+        const data = this.#sourceFromMap
+            ? await this.#setPathsFromMap()
+            : await this.#setPathsFromSCKAN()
+
+        const pathList: string[] = ['<option value="">Please select path:</option>']
+
+        for (const {value, label} of data) {
+            if (this.#path && this.#path === value) {
+                pathList.push(`<option value="${value}" selected label="${value}&nbsp;&nbsp;${label}"></option>`)
+            } else {
+                pathList.push(`<option value="${value}" label="${value}&nbsp;&nbsp;${label}"></option>`)
+            }
+        }
+
         await this.#getCachedTermLabels()
         this.#pathSelector.innerHTML = pathList.join('')
-        if (selectedPath) {
-            await this.#showGraph(selectedPath, this.#layout)
-        }
-        return ''
     }
 
     async #getAvailableMaps()
@@ -436,26 +521,39 @@ export class App
         }
     }
 
-    async #setSourceList(selectedSource: string): Promise<string>
+    #setServerList()
+    //==============
+    {
+        const serverList = []
+        for (const key in MAP_ENDPOINTS) {
+            const url = MAP_ENDPOINTS[key]
+            if (!this.#mapServer) {
+                this.#mapServer = url
+            }
+            const selected = this.#mapServer === url ? 'selected' : ''
+            serverList.push(`<option value="${url}" ${selected}>${key}</option>`)
+        }
+        this.#serverSelector.innerHTML = serverList.join('')
+    }
+
+    async #setSourceList()
     //=====================================
     {
         const data = await this.#getJsonData<SourceList>(`${this.#mapServer}knowledge/sources`)
         const sources = data ? (data.sources || []) : []
 
         // Order with most recent first...
-        let firstSource = ''
         const sourceList: string[] = []
         sourceList.push('<optgroup label="SCKAN Release:">')
         for (const source of sources) {
             if (source) {
-                if (selectedSource && selectedSource === source) {
-                    firstSource = source
+                if (!this.#source) {
+                    this.#source = source
+                }
+                if (this.#source === source) {
                     sourceList.push(`<option value="${source}" selected>${source}</option>`)
                 } else {
                     sourceList.push(`<option value="${source}">${source}</option>`)
-                }
-                if (firstSource === '') {
-                    firstSource = source
                 }
             }
         }
@@ -485,7 +583,7 @@ export class App
 
             if (mapToShow) {
                 sourceList.push(`
-                    <option value="${uuid}" ${selectedSource === uuid ? 'selected' : ''}>
+                    <option value="${uuid}" ${this.#source === uuid ? 'selected' : ''}>
                         ${mapToShow.name}
                     </option>
                 `)
@@ -494,7 +592,6 @@ export class App
 
         sourceList.push('</optgroup">')
         this.#sourceSelector.innerHTML = sourceList.join('')
-        return firstSource
     }
 }
 
