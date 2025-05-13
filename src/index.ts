@@ -33,17 +33,17 @@ const MAPS_TO_SHOW = [
         id: 'human-flatmap_male',
     },
 ]
-const emptyConnectivity = {
-    connectivity: [],
-    axons: [],
-    dendrites: [],
-    somas: []
-}
 const MAP_ENDPOINTS = {
     curation: 'https://mapcore-demo.org/curation/flatmap/',
     devel: 'https://mapcore-demo.org/devel/flatmap/v4/',
     staging: 'https://mapcore-demo.org/staging/flatmap/v1/',
     production: 'https://mapcore-demo.org/current/flatmap/v3/',
+}
+const emptyConnectivity = {
+    connectivity: [],
+    axons: [],
+    dendrites: [],
+    somas: []
 }
 
 //==============================================================================
@@ -305,6 +305,7 @@ export class App
     #disableTools()
     //=============
     {
+        this.#serverSelector.disabled = true
         this.#pathSelector.disabled = true
         this.#layoutSelector.disabled = true
         this.#sourceSelector.disabled = true
@@ -313,6 +314,7 @@ export class App
     #enableTools()
     //=============
     {
+        this.#serverSelector.disabled = false
         this.#pathSelector.disabled = false
         this.#layoutSelector.disabled = false
         this.#sourceSelector.disabled = false
