@@ -25,12 +25,28 @@ import { ConnectivityGraph, ConnectivityKnowledge, KnowledgeNode } from './graph
 const MIN_SCHEMA_VERSION = 1.3
 const MAPS_TO_SHOW = [
     {
-        name: 'Rat',
-        id: 'rat-flatmap',
+        name: 'Human Female',
+        id: 'human-flatmap_female',
     },
     {
         name: 'Human Male',
         id: 'human-flatmap_male',
+    },
+    {
+        name: 'Rat',
+        id: 'rat-flatmap',
+    },
+    {
+        name: 'Mouse',
+        id: 'mouse-flatmap',
+    },
+    {
+        name: 'Pig',
+        id: 'pig-flatmap',
+    },
+    {
+        name: 'Cat',
+        id: 'cat-flatmap',
     },
 ]
 const MAP_ENDPOINTS = {
@@ -579,14 +595,15 @@ export class App
             }
         });
 
-        availableMaps.forEach((map) => {
-            const { id, uuid } = map
-            const mapToShow = MAPS_TO_SHOW.find(_map => _map.id === id)
+        MAPS_TO_SHOW.forEach((map) => {
+            const { id, name } = map
+            const availableMap = availableMaps.find(_map => _map.id === id)
 
-            if (mapToShow) {
+            if (availableMap) {
+                const { uuid } = availableMap
                 sourceList.push(`
                     <option value="${uuid}" ${this.#source === uuid ? 'selected' : ''}>
-                        ${mapToShow.name}
+                        ${name}
                     </option>
                 `)
             }
