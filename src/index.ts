@@ -91,6 +91,7 @@ export class App
     #layout: string
     #pathPrompt: HTMLElement
     #pathSelector: HTMLSelectElement
+    #pathsCount: HTMLElement
     #serverSelector: HTMLSelectElement
     #sourceSelector: HTMLSelectElement
     #layoutSelector: HTMLSelectElement
@@ -107,6 +108,7 @@ export class App
         this.#layout = layout
         this.#pathPrompt = document.getElementById('path-prompt')
         this.#pathSelector = document.getElementById('path-selector') as HTMLSelectElement
+        this.#pathsCount = document.getElementById('paths-count')
         this.#serverSelector = document.getElementById('server-selector') as HTMLSelectElement
         this.#sourceSelector = document.getElementById('source-selector') as HTMLSelectElement
         this.#layoutSelector = document.getElementById('layout-selector') as HTMLSelectElement
@@ -486,7 +488,7 @@ export class App
         const pathsData = []
         for (const [key, jsonKnowledge] of data.values) {
             const knowledge = JSON.parse(jsonKnowledge)
-            if ('connectivity' in knowledge) {
+            if ('connectivity' in knowledge && knowledge.connectivity.length) {
                 const label = knowledge.label || key
                 const shortLabel = (label === key.slice(6).replace('-prime', "'").replaceAll('-', ' ')) ? ''
                                  : (label.length < 50) ? label : `${label.slice(0, 50)}...`
@@ -522,6 +524,7 @@ export class App
         }
 
         await this.#getCachedTermLabels()
+        this.#pathsCount.innerHTML = `(${data.length})`
         this.#pathSelector.innerHTML = pathList.join('')
     }
 
