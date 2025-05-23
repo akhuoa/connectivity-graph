@@ -48,6 +48,10 @@ const MAPS_TO_SHOW = [
         name: 'Cat',
         id: 'cat-flatmap',
     },
+    {
+        name: 'FC',
+        id: 'functional-connectivity',
+    },
 ]
 const MAP_ENDPOINTS = {
     curation: 'https://mapcore-demo.org/curation/flatmap/',
